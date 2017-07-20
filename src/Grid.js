@@ -13,8 +13,8 @@ class Grid extends Component {
     super(props)
     this.gameGrid = this.createGrid(this.props.rows, this.props.columns)
     this.flattedGrid = _.flatten(this.gameGrid)
+    this.generationCount = 0
     this.state = {
-      generationCount: 0,
       gameState: 'play'
     }
      // default speed:
@@ -223,8 +223,9 @@ class Grid extends Component {
         this.flattedGrid.forEach((currentCell) => {
           currentCell.status = 'dead'
         })
+        this.generationCount = 0
         $(".cell").removeClass('alive').addClass('dead')
-        this.setState({ generationCount: 0 })
+        $("#genCounter").text(this.generationCount)
       break
       default:
       break
@@ -256,14 +257,18 @@ class Grid extends Component {
     this.flattedGrid.forEach((currentCell) => {
       this.cellChangeStatus(currentCell)
     })
-    // update the status for each cell, coping the value of nextStatus property:
+    // update the status for each cell, based on the value of nextStatus property:
     this.flattedGrid.forEach((currentCell) => {
       currentCell.status = currentCell.nextStatus
+      //use jquery to avoid rerendering the Grid (no need to update the state to show the color change):
+      $('#'+currentCell.id).attr('class', 'cell '+currentCell.nextStatus)
     })
-    // update the generation count state variable:
-    let nextGenerationCount = this.state.generationCount + 1
-    this.setState({ generationCount: nextGenerationCount++ })
+    // update the generation count:
+    this.generationCount = this.generationCount + 1
+    $("#genCounter").text(this.generationCount)
+    // this.setState({ generationCount: this.generationCount }) // react way, bad performances
   }
+
   
   componentDidMount () {
     // set the css width of the board:
@@ -281,10 +286,8 @@ class Grid extends Component {
     //start the game:
     if (this.state.gameState === 'play') {
       const runGameInt = () => {
-        // this.startTime = new Date().getTime() // FOR TESTING
         this.runGame()
         this.intervalId = setTimeout(runGameInt, this.speed)
-        // console.log('runGame took '+(new Date().getTime()-this.startTime)+' ms') //TEST
       }
       runGameInt()
     }
@@ -296,12 +299,13 @@ class Grid extends Component {
   }
    
   render () {
-    // console.log('rendering Grid ('+this.state.generationCount+')') // TEST
     return (
       <div id='main-container'>
         <div className='controls-container' id='top-controls'>
           <div className='infoText'>Click on a cell to change its state manually.</div>
-          <div>Generations: <span className='controls-span'>{this.state.generationCount}</span></div>
+          <div>
+            Generations: <span id='genCounter' className='controls-span'>{this.generationCount}</span>
+          </div>
           <ControlButton
             key='playButton' id='playButton' classes='btn btn-outline-success gameButton' name='Play' action='play'
             onClickHandler={this.changeGameState.bind(this)} gameState={this.state.gameState}
